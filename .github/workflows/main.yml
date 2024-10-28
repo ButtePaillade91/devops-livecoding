@@ -1,7 +1,7 @@
 name: CI devops 2024
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop]  # inclut main et develop
   pull_request:
 
 jobs:
@@ -21,11 +21,12 @@ jobs:
         run: mvn -B verify --file ./pom.xml
 
       - name: SonarQube Analysis
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'  # exécute SonarQube uniquement sur main
         working-directory: simple-api
         run: mvn sonar:sonar -Dsonar.projectKey=ButtePaillade91_TP2_DevOps -Dsonar.organization=buttepaillade91 -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
   build-and-push-docker-image:
+    if: github.ref == 'refs/heads/main'  # Exécute le job uniquement sur main
     needs: test-backend
     runs-on: ubuntu-22.04
     steps:
@@ -40,17 +41,18 @@ jobs:
         with:
           context: ./simple-api
           tags: ${{ secrets.DOCKER_USERNAME }}/tp-devops-simple-api:latest
+          push: true
 
       - name: Build image and push database
         uses: docker/build-push-action@v3
         with:
           context: ./database
           tags: ${{ secrets.DOCKER_USERNAME }}/tp-devops-database:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
 
       - name: Build image and push httpd
         uses: docker/build-push-action@v3
         with:
           context: ./http-server
           tags: ${{ secrets.DOCKER_USERNAME }}/tp-devops-http-server:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
